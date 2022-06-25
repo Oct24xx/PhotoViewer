@@ -10,3 +10,7 @@
 
 ## 源码编译环境
     VS2022 + EasyX20220610
+
+## 软件截图
+![Capture-1](./Caputre/Capture-1.png)
+![Capture-2](./Caputre/Capture-2.png)
