@@ -12,5 +12,5 @@
     VS2022 + EasyX20220610
 
 ## 软件截图
-![Capture-1](./Caputre/Capture-1.png)
-![Capture-2](./Caputre/Capture-2.png)
+![Capture-1](./Capture/Capture-1.png)
+![Capture-2](./Capture/Capture-2.png)
