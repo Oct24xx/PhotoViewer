@@ -1,0 +1,6 @@
+﻿  Main.cpp
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 1476 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  PhotoViewer.vcxproj -> G:\PhotoViewer\PhotoViewrNew\x64\Release\PhotoViewer.exe
