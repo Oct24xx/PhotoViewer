@@ -444,8 +444,8 @@ private:
 		ZoomPercentText->Move(ImageFileName->GetX() + ImageFileName->GetWidth() - 128,
 			ImageFileName->GetY() + (ImageFileName->GetHeight() / 2 - ZoomPercentText->GetHeight() / 2));
 
-		ImageViewLabel->Move(GetWidth() / 2 - InViewImage->GetWidth() / 2 + ImageOffsetPoint.x,
-			GetHeight() / 2 - InViewImage->GetHeight() / 2 + ImageOffsetPoint.y);
+		ImageViewLabel->Move(GetWidth() / 2 - ImageViewLabel->GetWidth() / 2 + ImageOffsetPoint.x,
+			GetHeight() / 2 - ImageViewLabel->GetHeight() / 2 + ImageOffsetPoint.y);
 	}
 	void InitMainUI() {
 		ImageViewLabel  = new PVImageLabel(nullptr, this);
