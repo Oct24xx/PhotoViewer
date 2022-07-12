@@ -7,6 +7,7 @@
 #pragma once
 
 #include "vbase.hpp"
+#include "../../control/basic/VBasicControl/vapplication.hpp"
 
 #include <time.h>
 
@@ -35,7 +36,7 @@ public:
 	 * Start Functional:
 	 *	@description  : Start Clock
 	*/
-	void Start(unsigned long TimerDuraction) {
+	virtual void Start(unsigned long TimerDuraction) {
 		ClockTimer = clock();
 
 		Duraction  = TimerDuraction;
@@ -46,6 +47,40 @@ public:
 	*/
 	bool End() {
 		return (clock() - ClockTimer >= Duraction);
+	}
+};
+
+/*
+ * VSmartTimer class:
+ *	@description  : A Timer Own Signal
+*/
+class VSmartTimer : public VTimer, public VUIObject {
+private:
+	bool ClockStart = false;
+
+public:
+	VSignal<> TimerOnTime;
+
+public:
+	VSmartTimer(VApplication* Parent) : VUIObject(Parent) {
+
+	}
+
+public:
+	void Start(unsigned long TimerDuraction) override {
+		VTimer::Start(TimerDuraction);
+
+		ClockStart = true;
+	}
+
+	void CheckFrame() override {
+		if (ClockStart == true) {
+			if (End() == true) {
+				ClockStart = false;
+
+				TimerOnTime.Emit();
+			}
+		}
 	}
 };
 

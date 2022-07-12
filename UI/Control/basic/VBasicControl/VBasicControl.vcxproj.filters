@@ -13,5 +13,7 @@
     <ClInclude Include="viconbutton.hpp" />
     <ClInclude Include="vtextlabel.hpp" />
     <ClInclude Include="vcontrolgroup.hpp" />
+    <ClInclude Include="vanimation.hpp" />
+    <ClInclude Include="vviewlabel.h" />
   </ItemGroup>
 </Project>

@@ -6,6 +6,7 @@
 #include "./UI/Control/basic/VBasicControl/vcontrolgroup.hpp"
 #include "./UI/Control/basic/VBasicControl/viconbutton.hpp"
 #include "./UI/Control/basic/VBasicControl/vimagelabel.hpp"
+#include "./UI/Control/basic/VBasicControl/vanimation.hpp"
 
 #include <comutil.h>
 
@@ -242,6 +243,7 @@ private:
 			InitPicture();
 
 			ConfigMainUI();
+			PlayAnimation();
 		}
 	}
 
@@ -293,89 +295,95 @@ private:
 
 	bool   FirstTimeDrag = true;
 
+	time_t DealyClock = 0;
+
 private:
 	void DealyMessage(VMessage* Message) override {
-		if (Message->GetType() == VMessageType::KeyClickedMessage) {
-			VKeyClickedMessage* KeyMessage = static_cast<VKeyClickedMessage*>(Message);
+		if (clock() - DealyClock >= 100) {
+			DealyClock = clock();
 
-			if (KeyMessage->KeyPrevDown == true) {
-				if (KeyMessage->KeyVKCode == VK_LEFT &&
-					LocalContainerPosition - 1 >= 0) {
-					if (ZoomedImage == InViewImage) {
-						ZoomedImage = nullptr;
+			if (Message->GetType() == VMessageType::KeyClickedMessage) {
+				VKeyClickedMessage* KeyMessage = static_cast<VKeyClickedMessage*>(Message);
+
+				if (KeyMessage->KeyPrevDown == true) {
+					if (KeyMessage->KeyVKCode == VK_LEFT &&
+						LocalContainerPosition - 1 >= 0) {
+						if (ZoomedImage == InViewImage) {
+							ZoomedImage = nullptr;
+						}
+
+						delete InViewImage;
+						InViewImage = nullptr;
+
+						if (ZoomedImage != nullptr) {
+							delete ZoomedImage;
+							ZoomedImage = nullptr;
+						}
+
+						--LocalContainerPosition;
+
+						PictureFilePath = PicturesContainer[LocalContainerPosition];
+
+						int SliptPosition = static_cast<int>(PictureFilePath.find_last_of(L"\\")) + 1;
+
+						PictureFileName = PictureFilePath.substr(SliptPosition, PictureFilePath.size() - SliptPosition);
+
+						InitPicture();
+						ConfigMainUI();
 					}
+					if (KeyMessage->KeyVKCode == VK_RIGHT &&
+						LocalContainerPosition + 1 < PicturesContainer.size()) {
+						if (ZoomedImage == InViewImage) {
+							ZoomedImage = nullptr;
+						}
 
-					delete InViewImage;
-					InViewImage = nullptr;
+						delete InViewImage;
+						InViewImage = nullptr;
 
-					if (ZoomedImage != nullptr) {
-						delete ZoomedImage;
-						ZoomedImage = nullptr;
+						if (ZoomedImage != nullptr) {
+							delete ZoomedImage;
+							ZoomedImage = nullptr;
+						}
+
+						++LocalContainerPosition;
+
+						PictureFilePath = PicturesContainer[LocalContainerPosition];
+
+						int SliptPosition = static_cast<int>(PictureFilePath.find_last_of(L"\\")) + 1;
+
+						PictureFileName = PictureFilePath.substr(SliptPosition, PictureFilePath.size() - SliptPosition);
+
+						InitPicture();
+						ConfigMainUI();
 					}
-
-					--LocalContainerPosition;
-
-					PictureFilePath = PicturesContainer[LocalContainerPosition];
-
-					int SliptPosition = static_cast<int>(PictureFilePath.find_last_of(L"\\")) + 1;
-
-					PictureFileName  = PictureFilePath.substr(SliptPosition, PictureFilePath.size() - SliptPosition);
-
-					InitPicture();
-					ConfigMainUI();
-				}
-				if (KeyMessage->KeyVKCode == VK_RIGHT &&
-					LocalContainerPosition + 1 < PicturesContainer.size()) {
-					if (ZoomedImage == InViewImage) {
-						ZoomedImage = nullptr;
-					}
-
-					delete InViewImage;
-					InViewImage = nullptr;
-
-					if (ZoomedImage != nullptr) {
-						delete ZoomedImage;
-						ZoomedImage = nullptr;
-					}
-
-					++LocalContainerPosition;
-
-					PictureFilePath = PicturesContainer[LocalContainerPosition];
-
-					int SliptPosition = static_cast<int>(PictureFilePath.find_last_of(L"\\")) + 1;
-
-					PictureFileName = PictureFilePath.substr(SliptPosition, PictureFilePath.size() - SliptPosition);
-
-					InitPicture();
-					ConfigMainUI();
 				}
 			}
-		}
-		if (Message->GetType() == VMessageType::MouseMoveMessage) {
-			if (InDrag == true) {
-				VMouseMoveMessage* MouseMessage = static_cast<VMouseMoveMessage*>(Message);
+			if (Message->GetType() == VMessageType::MouseMoveMessage) {
+				if (InDrag == true) {
+					VMouseMoveMessage* MouseMessage = static_cast<VMouseMoveMessage*>(Message);
 
-				if (FirstTimeDrag == true) {
-					MouseDragPoint = MouseMessage->MousePosition;
+					if (FirstTimeDrag == true) {
+						MouseDragPoint = MouseMessage->MousePosition;
 
-					FirstTimeDrag  = false;
+						FirstTimeDrag = false;
+					}
+					else {
+						ImageOffsetPoint.x = -(MouseDragPoint.x - MouseMessage->MousePosition.x);
+						ImageOffsetPoint.y = -(MouseDragPoint.y - MouseMessage->MousePosition.y);
+
+						ConfigMainUI();
+					}
+				}
+			}
+			if (Message->GetType() == VMessageType::MouseWheelMessage) {
+				VMouseWheelMessage* WheelMessage = static_cast<VMouseWheelMessage*>(Message);
+
+				if (WheelMessage->WheelValue > 0) {
+					ZoomUp();
 				}
 				else {
-					ImageOffsetPoint.x = -(MouseDragPoint.x - MouseMessage->MousePosition.x);
-					ImageOffsetPoint.y = -(MouseDragPoint.y - MouseMessage->MousePosition.y);
-
-					ConfigMainUI();
+					ZoomDown();
 				}
-			}
-		}
-		if (Message->GetType() == VMessageType::MouseWheelMessage) {
-			VMouseWheelMessage* WheelMessage = static_cast<VMouseWheelMessage*>(Message);
-
-			if (WheelMessage->WheelValue > 0) {
-				ZoomUp();
-			}
-			else {
-				ZoomDown();
 			}
 		}
 	}
@@ -430,6 +438,30 @@ private:
 	VIconButton*  ZoomDownButton;
 	VIconButton*  ZoomResetButton;
 
+	VAlphaAnimation* ZoomUpButtonAlpha;
+	VAlphaAnimation* ZoomDownButtonAlpha;
+	VAlphaAnimation* ZoomResetButtonAlpha;
+	VPositionAnimation* ZoomUpButtonPosition;
+	VPositionAnimation* ZoomDownButtonPosition;
+	VPositionAnimation* ZoomResetButtonPosition;
+
+	void PlayAnimation() {
+		ZoomUpButton->SetTransparency(0);
+		ZoomDownButton->SetTransparency(0);
+		ZoomResetButton->SetTransparency(0);
+
+		ZoomUpButton->Move(ZoomUpButton->GetX(), ZoomUpButton->GetY() - 40);
+		ZoomDownButton->Move(ZoomDownButton->GetX(), ZoomDownButton->GetY() - 40);
+		ZoomResetButton->Move(ZoomResetButton->GetX(), ZoomResetButton->GetY() - 40);
+
+		ZoomUpButtonAlpha->Start(255);
+		ZoomDownButtonAlpha->Start(255);
+		ZoomResetButtonAlpha->Start(255);
+
+		ZoomUpButtonPosition->Start({ ZoomUpButton->GetX(), ZoomUpButton->GetY() + 40 });
+		ZoomDownButtonPosition->Start({ ZoomDownButton->GetX(), ZoomDownButton->GetY() + 40 });
+		ZoomResetButtonPosition->Start({ ZoomResetButton->GetX(), ZoomResetButton->GetY() + 40 });
+	}
 	void ConfigMainUI() {
 		ImageFileName->SetPlaneText(PictureFileName);
 		ImageFileName->Resize(873, 83);
@@ -455,6 +487,14 @@ private:
 		ZoomUpButton    = new VIconButton(this);
 		ZoomDownButton  = new VIconButton(this);
 		ZoomResetButton = new VIconButton(this);
+
+		ZoomUpButtonAlpha    = new VAlphaAnimation(ZoomUpButton, 300, VInterpolatorType::OvershootInterpolator);
+		ZoomDownButtonAlpha  = new VAlphaAnimation(ZoomDownButton, 300, VInterpolatorType::OvershootInterpolator);
+		ZoomResetButtonAlpha = new VAlphaAnimation(ZoomResetButton, 300, VInterpolatorType::OvershootInterpolator);
+
+		ZoomUpButtonPosition = new VPositionAnimation(ZoomUpButton, 300, VInterpolatorType::OvershootInterpolator);
+		ZoomDownButtonPosition = new VPositionAnimation(ZoomDownButton, 300, VInterpolatorType::OvershootInterpolator);
+		ZoomResetButtonPosition = new VPositionAnimation(ZoomResetButton, 300, VInterpolatorType::OvershootInterpolator);
 
 		ZoomUpButton->ButtonPushed.Connect(this, &PVMainWindow::ZoomUp);
 		ZoomDownButton->ButtonPushed.Connect(this, &PVMainWindow::ZoomDown);

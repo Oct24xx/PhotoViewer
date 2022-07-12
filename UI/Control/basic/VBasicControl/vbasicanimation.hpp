@@ -4,6 +4,7 @@
 */
 
 #pragma once
+#pragma warning(disable : 26451)
 
 #include "vuiobject.hpp"
 
@@ -133,7 +134,7 @@ public:
 	 *	@description  : Is the InterpolatorEnd End
 	*/
 	bool  InterpolatorEnd() {
-		return (LocalX >= 1);
+		return (LocalX >= 1 + InterpolatorDuration);
 	}
 
 	double GetOneFrame() {
@@ -141,14 +142,69 @@ public:
 			return 1.f;
 		}
 
-		auto Result = InterpolatorFunction(LocalX);
-		LocalX += InterpolatorDuration;
+		if (LocalX <= 1) {
+			double Result = InterpolatorFunction(LocalX);
+			LocalX += InterpolatorDuration;
 
-		return Result;
+			return Result;
+		}
+		else {
+			LocalX += InterpolatorDuration;
+			return 1.f;
+		}
+
+		return 0.f;
 	}
 
 	void Reset() {
 		LocalX = 0;
+	}
+
+	void SetDx(double Dx) {
+		InterpolatorDuration = Dx;
+	}
+};
+
+
+
+class VBasicInterpolator {
+protected:
+	bool   AnimationStart = false;
+	VAnimationInterpolator Interpolator;
+
+public:
+	VBasicInterpolator(double Dx, VInterpolatorType Type)
+		: Interpolator(Dx, Type) {
+
+	}
+
+public:
+	/*
+	 * IsAnimationEnd Functional:
+	 *	@description  : Get the Stats of Animation
+	*/
+	bool IsAnimationEnd() {
+		if (AnimationStart == true) {
+			if (Interpolator.InterpolatorEnd() == true) {
+				AnimationStart = false;
+
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+		else {
+			return true;
+		}
+	}
+
+	/*
+	 * SetDx Functional:
+	 *	@description  : Set the Delta X
+	*/
+	void SetDx(double Dx) {
+		Interpolator.SetDx(Dx);
 	}
 };
 
@@ -156,14 +212,10 @@ public:
  * VColorInterpolator class:
  *	@description  : The Interpolator of VColor
 */
-class VColorInterpolator {
+class VColorInterpolator : public VBasicInterpolator {
 private:
 	VColor TargetColor;
 	VColor SourceColor;
-
-	VAnimationInterpolator Interpolator;
-
-	bool   AnimationStart = false;
 
 public:
 	/*
@@ -171,7 +223,7 @@ public:
 	*/
 
 	VColorInterpolator(double Dx, VInterpolatorType Interpolator)
-		: Interpolator(Dx, Interpolator) {
+		: VBasicInterpolator(Dx, Interpolator) {
 
 	}
 	void Start(VColor Source, VColor Target) {
@@ -190,10 +242,12 @@ public:
 	VColor GetOneFrame() {
 		auto InterpolatorFrame = Interpolator.GetOneFrame();
 
-		int ResultR = SourceColor.GetRed()   + ( TargetColor.GetRed()   - SourceColor.GetRed()   ) * InterpolatorFrame;
-		int ResultG = SourceColor.GetGreen() + ( TargetColor.GetGreen() - SourceColor.GetGreen() ) * InterpolatorFrame;
-		int ResultB = SourceColor.GetBlue()  + ( TargetColor.GetBlue()  - SourceColor.GetBlue()  ) * InterpolatorFrame;
-		int ResultA = SourceColor.GetAlpha() + ( TargetColor.GetAlpha() - SourceColor.GetAlpha() ) * InterpolatorFrame;
+		// TargetPoint.x + (SourcePoint.x - TargetPoint.x) * (1.f - InterpolatorFrame);
+
+		int ResultR = TargetColor.GetRed()   + (SourceColor.GetRed()   - TargetColor.GetRed()   ) * (1.f - InterpolatorFrame);
+		int ResultG = TargetColor.GetGreen()   + (SourceColor.GetGreen()   - TargetColor.GetGreen()   ) * (1.f - InterpolatorFrame);
+		int ResultB = TargetColor.GetBlue() + (SourceColor.GetBlue() - TargetColor.GetBlue()) * (1.f - InterpolatorFrame);
+		int ResultA = TargetColor.GetAlpha() + (SourceColor.GetAlpha() - TargetColor.GetAlpha()) * (1.f - InterpolatorFrame);
 
 		return VColor(ResultR, ResultG, ResultB, ResultA);
 	}
@@ -216,6 +270,114 @@ public:
 		else {
 			return true;
 		}
+	}
+};
+
+/*
+ * VPositionInterpolator class:
+ *	@description  : The Interpolator of Position
+*/
+class VPositionInterpolator : public VBasicInterpolator {
+private:
+	VPoint TargetPoint;
+	VPoint SourcePoint;
+
+public:
+	VPositionInterpolator(double Dx, VInterpolatorType Interpolator)
+		: VBasicInterpolator(Dx, Interpolator) {
+
+	}
+	void Start(VPoint Source, VPoint Target) {
+		TargetPoint = Target;
+		SourcePoint = Source;
+
+		AnimationStart = true;
+
+		Interpolator.Reset();
+	}
+
+	/*
+	 * GetOneFrame Functional:
+	 *	@description  : Get One Point
+	*/
+	VPoint GetOneFrame() {
+		double InterpolatorFrame = Interpolator.GetOneFrame();
+
+		int ResultX = TargetPoint.x + (SourcePoint.x - TargetPoint.x) * (1.f - InterpolatorFrame);
+		int ResultY = TargetPoint.y + (SourcePoint.y - TargetPoint.y) * (1.f - InterpolatorFrame);
+
+		return { ResultX, ResultY };
+	}
+};
+
+/*
+ * VAlphaInterpolator class:
+ *	@description  : The Interpolator of Transparency
+*/
+class VAlphaInterpolator : public VBasicInterpolator {
+private:
+	short TargetAlpha = 0;
+	short SourceAlpha = 0;
+
+public:
+	VAlphaInterpolator(double Dx, VInterpolatorType Interpolator)
+		: VBasicInterpolator(Dx, Interpolator) {
+
+	}
+	void Start(short Source, short Target) {
+		TargetAlpha = Target;
+		SourceAlpha = Source;
+
+		AnimationStart = true;
+
+		Interpolator.Reset();
+	}
+
+	/*
+	 * GetOneFrame Functional:
+	 *	@description  : Get One Alpha
+	*/
+	short GetOneFrame() {
+		double InterpolatorFrame = Interpolator.GetOneFrame();
+		
+		return TargetAlpha + (SourceAlpha - TargetAlpha) * (1.f - InterpolatorFrame);
+	}
+};
+
+/*
+ * VSizeInterpolator class:
+ *	@description  : The Interpolator of Size
+*/
+class VSizeInterpolator : public VBasicInterpolator {
+private:
+	VSize SourceSize;
+	VSize TargetSize;
+
+public:
+	VSizeInterpolator(double Dx, VInterpolatorType Interpolator)
+		: VBasicInterpolator(Dx, Interpolator) {
+
+	}
+	void Start(VSize Source, VSize Target) {
+		TargetSize = Target;
+		SourceSize = Source;
+
+		AnimationStart = true;
+
+		Interpolator.Reset();
+	}
+
+	/*
+	 * GetOneFrame Functional:
+	 *	@description  : Get One Alpha
+	*/
+	VSize GetOneFrame() {
+		double InterpolatorFrame = Interpolator.GetOneFrame();
+
+		int TargetWidth  = TargetSize.x + (SourceSize.x - TargetSize.x) * (1.f - InterpolatorFrame);
+		int TargetHeight = TargetSize.y + (SourceSize.y - TargetSize.y) * (1.f - InterpolatorFrame);
+
+		return { TargetWidth, TargetHeight };
 	}
 };
 

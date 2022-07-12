@@ -16,6 +16,7 @@ public:
 	 * Signal System
 	*/
 	VSignal<> ButtonPushed;
+	VSignal<> ButtonInFocus;
 
 public:
 	/*
@@ -37,14 +38,16 @@ public:
 	void MouseLeftClicked(VMouseClickedFlag ClickedFlag) override {
 		switch (ClickedFlag) {
 		case VMouseClickedFlag::Down: {
-			ButtonPushed.Emit();
-
 			LeftClickedDown();
+
+			ButtonInFocus.Emit();
 
 			break;
 		}
 		case VMouseClickedFlag::Up: {
 			LeftClickedUp();
+
+			ButtonPushed.Emit();
 
 			break;
 		}

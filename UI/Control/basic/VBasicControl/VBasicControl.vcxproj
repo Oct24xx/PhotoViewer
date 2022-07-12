@@ -128,6 +128,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="vabstractbutton.hpp" />
+    <ClInclude Include="vanimation.hpp" />
     <ClInclude Include="vblurlabel.hpp" />
     <ClInclude Include="vcontrolgroup.hpp" />
     <ClInclude Include="viconbutton.hpp" />
@@ -138,6 +139,7 @@
     <ClInclude Include="vpushbutton.hpp" />
     <ClInclude Include="vtheme.hpp" />
     <ClInclude Include="vuiobject.hpp" />
+    <ClInclude Include="vviewlabel.h" />
     <ClInclude Include="vwidget.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

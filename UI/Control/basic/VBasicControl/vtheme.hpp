@@ -47,6 +47,8 @@ public:
 #define VBLURLABEL_THEME     4
 #define VIMAGELABEL_THEME    5
 #define VICONBUTTON_THEME    6
+#define VSCROLLBAR_THEME     7
+#define VSCROLLBUTTON_THEME  8
 
 class VWidgetTheme : public VTheme {
 public:
@@ -140,6 +142,32 @@ public:
 	}
 };
 
+class VScrollBarTheme : public VNativeLabelTheme {
+public:
+	VColor OnDragBackgroundColor;
+	VColor OnDragLineColor;
+
+	VColor CurrentLineColor;
+	VColor CurrentBackgroundColor;
+
+public:
+	VScrollBarTheme() {
+		BackgroundColor        = VColor(54, 54, 54, 81);
+		LineColor              = VColor(54, 54, 54, 81);
+							   
+		OnDragBackgroundColor  = VColor(54, 54, 54, 255);
+		OnDragLineColor        = VColor(54, 54, 54, 255);
+							   
+		CurrentLineColor       = LineColor;
+		CurrentBackgroundColor = BackgroundColor;
+	}
+
+public:
+	short GetThemeType() override {
+		return VSCROLLBAR_THEME;
+	}
+};
+
 class VPushButtonTheme : public VNativeLabelTheme {
 public:
 	VColor OnHoverBackgroundColor;
@@ -188,16 +216,53 @@ public:
 	VImage* IconImage;
 };
 
+class VScrollButtonTheme : public VNativeLabelTheme{
+public:
+	VColor OnHoverBackgroundColor;
+	VColor OnHoverLineColor;
+
+	VColor OnClickedBackgroundColor;
+	VColor OnClickedLineColor;
+
+	VColor CurrentLineColor;
+	VColor CurrentBackgroundColor;
+
+public:
+	VScrollButtonTheme() {
+		BackgroundColor          = VColor(80, 80, 80, 255);
+		LineColor                = VColor(80, 80, 80, 255);
+							     
+		OnHoverBackgroundColor   = VColor(80, 80, 80, 255);
+		OnHoverLineColor         = VColor(80, 80, 80, 255);
+
+		OnClickedBackgroundColor = VColor(98, 100, 167, 255);
+		OnClickedLineColor       = VColor(98, 100, 167, 255);
+
+		CurrentLineColor       = LineColor;
+		CurrentBackgroundColor = BackgroundColor;
+
+		Radius = { 0, 0 };
+
+		FontFamily = nullptr;
+		FontSize   = 0;
+	}
+
+public:
+	short GetThemeType() override {
+		return VSCROLLBUTTON_THEME;
+	}
+};
+
 class VIconButtonTheme : public VNativeLabelTheme {
 public:
 	VColor  OnHoverBackgroundColor;
 	VColor  OnHoverLineColor;
 	VColor  OnHoverTextColor;
-		    
+
 	VColor  OnClickedBackgroundColor;
 	VColor  OnClickedLineColor;
 	VColor  OnClickedTextColor;
-		    
+
 	VColor  CurrentLineColor;
 	VColor  CurrentBackgroundColor;
 	VColor  CurrentTextColor;

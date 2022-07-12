@@ -144,6 +144,8 @@ private:
 		ThemeList.push_back(new VBlurLabelTheme());
 		ThemeList.push_back(new VImageLabelTheme());
 		ThemeList.push_back(new VIconButtonTheme());
+		ThemeList.push_back(new VScrollBarTheme());
+		ThemeList.push_back(new VScrollButtonTheme());
 	}
 
 protected:
@@ -204,7 +206,7 @@ public:
 			Sleep(1);
 		}
 
-		/* Exit Not Normal */
+		/* Exit Not Normaly */
 		return -1;
 	}
 };

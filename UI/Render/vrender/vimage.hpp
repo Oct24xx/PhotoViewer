@@ -18,7 +18,19 @@ VLIB_BEGIN_NAMESPACE
 */
 class VImage : public VPaintbleObject {
 private:
-	VMemoryPtr<VGdiplus::Bitmap> NativeImage;
+	VMemoryPtr<VGdiplus::ImageAttributes>    NativeAttributes;
+	VMemoryPtr<VGdiplus::Bitmap>             NativeImage;
+
+private:
+	void InitAttribute() {
+		VGdiplus::ColorMatrix Matrix = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+										   0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+										   0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+										   0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+										   0.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+
+		NativeAttributes->SetColorMatrix(&Matrix);
+	}
 
 public:
 	/*
@@ -35,8 +47,15 @@ public:
 	 * GetNativeImage Functional:
 	 *	@description  : Get the Native Image Of Gdiplus
 	*/
-	VGdiplus::Bitmap* GetNativeImage() {
+	VGdiplus::Bitmap*         GetNativeImage() {
 		return NativeImage.get();
+	}
+	/*
+	 * GetNativeAttribute Functional:
+	 *	@description  : Get the Native Attribute Of Gdiplus
+	*/
+	VGdiplus::ImageAttributes* GetNativeAttributes() {
+		return NativeAttributes.get();
 	}
 
 public:
@@ -78,6 +97,10 @@ public:
 	VImage()
 		: VPaintbleObject(VPaintbleType::ImagePainter) {
 		NativeImage.reset(nullptr);
+		
+		NativeAttributes.reset(new VGdiplus::ImageAttributes);
+
+		InitAttribute();
 	}
 
 	VImage(const VImage& Object)
@@ -86,29 +109,46 @@ public:
 			0, 0, Object.NativeImage->GetWidth(), Object.NativeImage->GetHeight(),
 			PixelFormat32bppPARGB
 		));
+
+		NativeAttributes.reset(Object.NativeAttributes->Clone());
 	}
 
 	VImage(int Width, int Height)
 		: VPaintbleObject(VPaintbleType::ImagePainter) {
 		NativeImage.reset(new VGdiplus::Bitmap(Width, Height, PixelFormat32bppPARGB));
+
+		NativeAttributes.reset(new VGdiplus::ImageAttributes);
+		InitAttribute();
 	}
 
 	VImage(HICON IconHandle)
 		: VPaintbleObject(VPaintbleType::ImagePainter) {
 		NativeImage.reset(new VGdiplus::Bitmap(IconHandle));
+
+		NativeAttributes.reset(new VGdiplus::ImageAttributes);
+		InitAttribute();
 	}
 	VImage(HBITMAP BitmapHandle, HPALETTE PaletteHandle)
 		: VPaintbleObject(VPaintbleType::ImagePainter) {
 		NativeImage.reset(new VGdiplus::Bitmap(BitmapHandle, PaletteHandle));
+
+		NativeAttributes.reset(new VGdiplus::ImageAttributes);
+		InitAttribute();
 	}
 	VImage(HINSTANCE ResourceHandle, std::wstring ResourceName)
 		: VPaintbleObject(VPaintbleType::ImagePainter) {
 		NativeImage.reset(new VGdiplus::Bitmap(ResourceHandle, ResourceName.c_str()));
+
+		NativeAttributes.reset(new VGdiplus::ImageAttributes);
+		InitAttribute();
 	}
 
 	VImage(std::wstring FilePath)
 		: VPaintbleObject(VPaintbleType::ImagePainter) {
 		NativeImage.reset(new VGdiplus::Bitmap(FilePath.c_str(), PixelFormat32bppPARGB));
+
+		NativeAttributes.reset(new VGdiplus::ImageAttributes);
+		InitAttribute();
 	}
 
 	/*
@@ -158,6 +198,20 @@ public:
 		BlurEffect.SetParameters(&Parameter);
 
 		NativeImage->ApplyEffect(&BlurEffect, &ImageRect);
+	}
+
+	/*
+	 * SetTransparency Functional:
+	 *	@description  : Set the Transparency Of Image
+	*/
+	void SetTransparency(int Transparency) {
+		VGdiplus::ColorMatrix ColorMatrix = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+						   0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+						   0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+						   0.0f, 0.0f, 0.0f, float(Transparency) / 255, 0.0f,
+						   0.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+
+		NativeAttributes->SetColorMatrix(&ColorMatrix);
 	}
 };
 

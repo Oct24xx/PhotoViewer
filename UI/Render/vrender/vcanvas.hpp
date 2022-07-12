@@ -32,7 +32,9 @@ public:
 	void PaintCanvas(int X, int Y, VCanvas* Canvas) {
 		VGdiplus::Graphics Graphics(GetNativeImage());
 
-		Graphics.DrawImage(Canvas->GetNativeImage(), X, Y);
+		Graphics.DrawImage(Canvas->GetNativeImage(), 
+			{ X, Y, Canvas->GetWidth(), Canvas->GetHeight() }, 
+			0, 0, Canvas->GetWidth(), Canvas->GetHeight(), VGdiplus::UnitPixel, Canvas->GetNativeAttributes());
 	}
 };
 

@@ -16,10 +16,6 @@
 #include "vpainterdevice.hpp"
 #include "vcolor.hpp"
 
-#include <ctime>
-
-#pragma comment( lib, "MSIMG32.LIB")
-
 VLIB_BEGIN_NAMESPACE
 
 /*
@@ -153,10 +149,12 @@ public:
 			Brush->GetNativeBrush());
 	}
 	void DrawImage(VImage* Image, VRect  Rect) {
-		NativeGraphics->DrawImage(Image->GetNativeImage(), Rect.ToGdiplusRect());
+		NativeGraphics->DrawImage(Image->GetNativeImage(), Rect.ToGdiplusRect(), 
+			0, 0, Image->GetWidth(), Image->GetHeight(), VGdiplus::UnitPixel, Image->GetNativeAttributes());
 	}
 	void DrawImage(VImage* Image, int X, int Y) {
-		NativeGraphics->DrawImage(Image->GetNativeImage(), X, Y);
+		NativeGraphics->DrawImage(Image->GetNativeImage(), { X, Y, Image->GetWidth(), Image->GetHeight() },
+			0, 0, Image->GetWidth(), Image->GetHeight(), VGdiplus::UnitPixel, Image->GetNativeAttributes());
 	}
 };
 

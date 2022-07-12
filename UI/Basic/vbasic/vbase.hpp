@@ -42,7 +42,6 @@ VLIB_BEGIN_NAMESPACE
 /* Gdiplus defiiton in VLib */
 namespace VGdiplus {
 #define GDIPVER 0x0110
-#include <Gdipluspixelformats.h>
 #include <gdiplus.h>
 	using namespace Gdiplus;
 }
@@ -123,6 +122,13 @@ public:
 		return Clone();
 	}
 	/*
+	 * Offset Functional:
+	 *	@description  : Move the Rectangle
+	*/
+	inline void Offset(const _Type NewX, const _Type NewY) {
+		Move(NewX, NewY);
+	}
+	/*
 	 * Move Functioinal:
 	 *	@description  : Move the rect to a new position
 	 *	@return value : Nothing
@@ -135,6 +141,14 @@ public:
 		top = Top;
 		right = left + width;
 		bottom = top + height;
+	}
+	/*
+	 * Resize Functional:
+	 *	@description  : Resize the Rectangle Area
+	*/
+	void Resize(int Width, int Height) {
+		right  = left + Width;
+		bottom = top  + Height;
 	}
 
 	/*
@@ -182,6 +196,16 @@ public:
 		right = max(Rect.right, right);
 		top = min(Rect.top, top);
 		bottom = max(Rect.bottom, bottom);
+	}
+
+	/*
+	 * OffsetRV Functional:
+	 *	@description  : Offset but Return
+	*/
+	_VRect* OffsetRV(_Type OffsetX, _Type OffsetY) {
+		Offset(OffsetX, OffsetY);
+
+		return this;
 	}
 };
 
@@ -292,6 +316,14 @@ using VRectF = _VRect<float>;
 
 using VPoint = _VPoint<int>;
 using VPointF = _VPoint<float>;
+
+/*
+ * VSize & VsizeF:
+ *	@description  : The Instantiation Of _VPoint (But Used for Size)
+*/
+
+using VSize = _VPoint<int>;
+using VsizeF = _VPoint<float>;
 
 /*
  * Marco for if&else stream branch

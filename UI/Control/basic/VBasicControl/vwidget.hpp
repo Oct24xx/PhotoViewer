@@ -115,18 +115,45 @@ private:
 
 	std::wstring                  GlobalFocusID;
 
+	bool                          LockFocusID = false;
+
 protected:
 	/*
 	 * SetGlobalFocusID override Functional
 	*/
 	void SetGlobalFocusID(std::wstring ID) override {
-		GlobalFocusID = ID;
+		if (LockFocusID == false) {
+			GlobalFocusID = ID;
+		}
 	}
 	/*
 	 * GetGlobalFocusID override Functional
 	*/
 	std::wstring GetGlobalFocusID() override {
 		return GlobalFocusID;
+	}
+	/*
+	 * LockGlobalFocusID override Functional
+	*/
+	void LockGlobalFocusID(std::wstring ID) override {
+		if (LockFocusID == false) {
+			LockFocusID = true;
+
+			GlobalFocusID = ID;
+		}
+	}
+	/*
+	 * UnlockGlobalFocusID override Functional
+	*/
+	void UnlockGlobalFocusID() override {
+		LockFocusID = false;
+	}
+
+	/*
+	 * IsGlobalIDLocking override Functional
+	*/
+	bool IsGlobalIDLocking() override {
+		return LockFocusID;
 	}
 
 private:
@@ -185,7 +212,7 @@ private:
 	 *	@description  : Init the Widget
 	*/
 	HWND InitWindow(int Width, int Height) {
-		HWND Handle = initgraph(Width, Height);
+		HWND Handle = initgraph(Width, Height, EW_SHOWCONSOLE);
 
 		InitWindowStyle();
 
@@ -205,7 +232,7 @@ protected:
 		int                    ObjectCount = 0;
 
 		for (auto ChildObject = Kernel()->ChildObjectContainer.begin();
-			ChildObject != Kernel()->ChildObjectContainer.end(); ++ChildObject, ++ObjectCount) {
+			ChildObject != Kernel()->ChildObjectContainer.end(); ++ObjectCount) {
 			if (AlreadySendedObject.find(ObjectCount) == AlreadySendedObject.end()) {
 				if (ChildObject.operator*()->SysDealyMessage(&RepaintMessage) == true) {
 					AlreadySendedObject.insert(std::pair<int, bool>(ObjectCount, 1));
@@ -213,17 +240,28 @@ protected:
 					ChildObject = Kernel()->ChildObjectContainer.begin();
 
 					ObjectCount = 0;
+					
+					continue;
 				}
 			}
+
+			++ChildObject;
 		}
 
 		for (auto& AlreadyExsitsMessage : RepaintMessageStack) {
 			if (AlreadyExsitsMessage->DirtyRectangle == *(RepaintMessage.RepaintAera)) {
 				return;
 			}
+
+			if (AlreadyExsitsMessage->DirtyRectangle.Overlap(*(RepaintMessage.RepaintAera)) == true) {
+				AlreadyExsitsMessage->DirtyRectangle.FusionRect(*(RepaintMessage.RepaintAera));
+				return;
+			}
 		}
 
-		RepaintMessageStack.push_back(new VRepaintMessage(*(RepaintMessage.RepaintAera)));
+		VRect RepaintRect = *(RepaintMessage.RepaintAera);
+
+		RepaintMessageStack.push_back(new VRepaintMessage(RepaintRect));
 	}
 
 public:
@@ -298,10 +336,6 @@ public:
 
 	void CheckFrame() {
 		if (FpsTimer.End() == true) {
-			for (auto& ChildObject : Kernel()->ChildObjectContainer) {
-				ChildObject->CheckAllFrame(true);
-			}
-
 			FpsTimer.Start(16);
 
 			if (Win32Resized == true) {
@@ -325,6 +359,7 @@ public:
 
 					delete RepaintMessage;
 				}
+
 				RepaintMessageStack.clear();
 
 				VGdiplus::Graphics     FlushGraphics(GetImageHDC());
@@ -335,6 +370,11 @@ public:
 
 				delete ObjectCanvas;
 			}
+
+			for (auto& ChildObject : Kernel()->ChildObjectContainer) {
+				ChildObject->CheckAllFrame(true);
+			}
+
 
 			FlushBatchDraw();
 		}

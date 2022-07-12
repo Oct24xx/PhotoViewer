@@ -50,6 +50,8 @@ enum VUIObjectUIStats {
 struct VUIObjectSurface {
 	VRect			 Rect;
 
+	int              Transparency = 255;
+
 	VUIObjectUIStats UIStats = VUIObjectUIStats::Normal;
 };
 
@@ -73,7 +75,14 @@ protected:
 			return std::vector<VTheme*>(0);
 		}
 	}
-
+	/*
+	 * GetRegoin Functional:
+	 *	@description  : Get the Regoin of Object
+	*/
+	VRect GetRegoin() {
+		return SurfaceRegion();
+	}
+	
 public:
 	/*
 	 * ObjectCanvas Variable:
@@ -142,6 +151,33 @@ protected:
 
 		return L"";
 	}
+	/*
+	 * LockGlobalFocusID Functional:
+	 *	@description  : Lock the Global Focus Object
+	*/
+	virtual void LockGlobalFocusID(std::wstring ID) {
+		if (Parent() != nullptr) {
+			return Parent()->LockGlobalFocusID(ID);
+		}
+	}
+	/*
+	 * UnlockGlobalFocusID Functional:
+	 *	@description  : Unlock the Global Focus Object
+	*/
+	virtual void UnlockGlobalFocusID() {
+		if (Parent() != nullptr) {
+			return Parent()->UnlockGlobalFocusID();
+		}
+	}
+	/*
+	 * IsGlobalIDLocking Functional:
+	 *	@description  : Get the Lock Stats
+	*/
+	virtual bool IsGlobalIDLocking() {
+		if (Parent() != nullptr) {
+			return Parent()->IsGlobalIDLocking();
+		}
+	}
 
 protected:
 	/*
@@ -177,9 +213,25 @@ protected:
 	bool              SendMessageToChild(VBasicMessage* Message, bool BreakWhenMeetTrue = true) {
 		EditChildMessage(Message);
 
-		if (Message->GetType() == VMessageType::CheckLocalFocusMessage) {
+		switch (Message->GetType()) {
+		case VMessageType::CheckLocalFocusMessage: {
 			auto FocusMessage = static_cast<VCheckFocusMessage*>(Message);
 			FocusMessage->FocusPoint.Offset(-SurfaceRegion().left, -SurfaceRegion().top);
+
+			break;
+		}
+		case VMessageType::MouseMoveMessage: {
+			auto FocusMessage = static_cast<VMouseMoveMessage*>(Message);
+			FocusMessage->MousePosition.Offset(-SurfaceRegion().left, -SurfaceRegion().top);
+
+			break;
+		}
+		case VMessageType::MouseClickedMessage: {
+			auto FocusMessage = static_cast<VMouseClickedMessage*>(Message);
+			FocusMessage->MousePosition.Offset(-SurfaceRegion().left, -SurfaceRegion().top);
+
+			break;
+		}
 		}
 
 		bool Flag = false;
@@ -318,6 +370,11 @@ protected:
 	 *	@description  : Check the UI Focus Stats and Call the Message Functional
 	*/
 	bool CheckUIFocusStats(VPoint MouseStats, VMessage* ResourceMessage) {
+		if (IsGlobalIDLocking() == true &&
+			GetGlobalFocusID() != Kernel()->GlobalID) {
+			return false;
+		}
+
 		if (MouseStats.InsideRect(Surface()->Rect)) {
 			if (ResourceMessage->GetType() == VMessageType::CheckLocalFocusMessage) {
 				if (GetGlobalFocusID() != Kernel()->GlobalID) {
@@ -378,6 +435,7 @@ protected:
 
 			return false;
 		}
+
 
 		return false;
 	}
@@ -467,7 +525,12 @@ public:
 		case VMessageType::RepaintMessage: {
 			auto RepaintMesage = static_cast<VRepaintMessage*>(Message);
 
-			if (RepaintMesage->DirtyRectangle.Overlap(Surface()->Rect)) {
+			if (RepaintMesage->DirtyRectangle.Overlap(Surface()->Rect) &&
+				(Parent()->IsApplication() == true ? true : 
+					Parent()->GetRegoin().
+						OffsetRV(Parent()->GetX(), Parent()->GetY())
+						->Overlap(Parent()->SurfaceRect()))
+				) {
 				if (ObjectCanvas != nullptr) {
 					delete ObjectCanvas;
 
@@ -477,6 +540,12 @@ public:
 				ObjectCanvas = new VCanvas(SurfaceRegion().GetWidth(),
 					SurfaceRegion().GetHeight());
 				OnPaint(ObjectCanvas);
+
+				if (Surface()->Transparency != 255) {
+					ObjectCanvas->SetTransparency(Surface()->Transparency);
+				}
+
+				EditCanvas(ObjectCanvas);
 
 				GetParentCanvas()->PaintCanvas(Surface()->Rect.left, Surface()->Rect.top, ObjectCanvas);
 
@@ -516,6 +585,23 @@ public:
 			return false;
 		}
 		}
+	}
+
+	/*
+	 * SetTransparency Functional:
+	 *	@description  : Set the Object's Transparency
+	*/
+	void SetTransparency(short Transparency) {
+		ObjectSurface->Transparency = Transparency;
+
+		Update();
+	}
+	/*
+	 * SetTransparency Functional:
+	 *	@description  : Get the Object's Transparency
+	*/
+	short GetTransparency() {
+		return ObjectSurface->Transparency;
 	}
 
 protected:
@@ -634,18 +720,20 @@ public:
 		return ObjectSurface->Rect.bottom - ObjectSurface->Rect.top;
 	}
 
-	void Resize(int Width, int Height) {
+	virtual void Resize(int Width, int Height) {
 		auto OldRect = Surface()->Rect.Clone();
 
 		Surface()->Rect.right = OldRect.left + Width;
 		Surface()->Rect.bottom = OldRect.top + Height;
 
 		OldRect.FusionRect(Surface()->Rect);
-		OldRect.Offset(-1, -1, 1, 1);
 
 		Update(OldRect);
 	}
-	void Move(int X, int Y) {
+	void Resize(VSize Size) {
+		Resize(Size.x, Size.y);
+	}
+	virtual void Move(int X, int Y) {
 		auto OldRect = Surface()->Rect.Clone();
 
 		auto Width = GetWidth();
@@ -656,10 +744,11 @@ public:
 		Surface()->Rect.right = X + Width;
 		Surface()->Rect.bottom = Y + Height;
 
-		OldRect.Offset(-1, -1, 1, 1);
-
 		Update();
 		Update(OldRect);
+	}
+	void Move(VPoint Point) {
+		Move(Point.x, Point.y);
 	}
 
 public:
